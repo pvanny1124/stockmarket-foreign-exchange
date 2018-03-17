@@ -42,7 +42,7 @@ create procedure sp_quote_feed(IN loops int)
               if (db_done OR loopcount=maxloops) then leave quote_loop;
               end if;
 
-              /* fetch attribute values for the current row and place them in variables */
+              /* fetch attribute values for the current row and place them in variables. Fetch will update the row when it is called again*/
               fetch cur1 into this_instrument, this_quote_date, this_quote_seq_nbr, this_trading_symbol, this_quote_time, this_ask_price, this_ask_size, this_bid_price, this_bid_size;
 
               /*all update logic goes here...first get stockmarket.QUOTE_ADJUST values into variables*/
@@ -71,9 +71,9 @@ create procedure sp_quote_feed(IN loops int)
 
               /* in all cases, check and reset switchpoint and if needed, reset amplitude and update dates*/
               if qa_switchpoint > 0 then
-                        update stockmarket.QUOTE_ADJUST set SWITCHPOINT=SWITCHPOINT-1 where INSTRUMENT_ID=this_instrument ;
+                        update stockmarket.QUOTE_ADJUST set SWITCHPOINT = SWITCHPOINT-1 where INSTRUMENT_ID=this_instrument ;
               else  /* switchpoint <=0, recalculate switchpoint and change direction */
-                        update stockmarket.QUOTE_ADJUST set SWITCHPOINT=ROUND((RAND()+.5)*400), DIRECTION=DIRECTION*-1 where INSTRUMENT_ID=this_instrument;
+                        update stockmarket.QUOTE_ADJUST set SWITCHPOINT = ROUND((RAND() + .5) * 400), DIRECTION=DIRECTION*-1 where INSTRUMENT_ID=this_instrument;
               end if;
 
               update stockmarket.QUOTE_ADJUST set AMPLITUDE = (RAND()+.5) where INSTRUMENT_ID = this_instrument;
@@ -82,7 +82,7 @@ create procedure sp_quote_feed(IN loops int)
 
               /* now write out the record*/
               insert into stockmarket.STOCK_QUOTE_FEED values(this_instrument, this_quote_date, this_quote_seq_nbr, this_trading_symbol, this_quote_time, this_ask_price, this_ask_size, this_bid_price, this_bid_size);
-              set loopcount=loopcount+1;
+              set loopcount = loopcount + 1;
           END LOOP;
 
       close cur1; /* close the cursor */
